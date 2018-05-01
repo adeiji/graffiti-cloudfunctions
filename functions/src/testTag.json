@@ -1,0 +1,14 @@
+{
+   "user_id": "tmdXC9odp4U76rdqps15xS3P4kh1",
+   "location": {
+      "latitude": 22.99193360702301,
+      "longitude": 120.2216565608842
+   },
+   "getTags": {
+      "latitude": 37.360407270000003,
+      "longitude": -122.11952001,
+      "collection": "tags",
+      "hashtags": ["california"],
+      "user_id": "tmdXC9odp4U76rdqps15xS3P4kh1"
+   }
+}

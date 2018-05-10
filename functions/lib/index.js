@@ -59,13 +59,16 @@ exports.checkIfDocumentExists = functions.https.onCall((data, context) => {
 exports.getDocumentsToReturn = function (documents, userDocs) {
     const documentsToReturn = []; // This will hold the tags that will be returned with the userIds    
     const users = {}; // key: User Id value: User document
+    console.log("The User Documents: " + userDocs.length);
     userDocs.forEach(function (user) {
         const userDoc = user.data();
         userDoc[kDocumentId] = user.id;
         users[user.id] = userDoc;
     });
+    console.log(users);
     documents.forEach(document => {
         const documentCopy = document.data();
+        console.log("The user_id being retrieved: " + document.get(kUserId));
         documentCopy[kUsername] = users[document.get(kUserId)][kUsername];
         documentCopy[kProfilePictureUrl] = users[document.get(kUserId)][kProfilePictureUrl];
         documentCopy[kDocumentId] = document.id;
@@ -292,6 +295,10 @@ Requires a document that consists of the following key values at least, user_id:
 exports.tagCreated = functions.firestore.document('tags/{tagId}')
     .onCreate((snapshot, context) => {
     return location.tagWithGeoFire(snapshot, admin);
+});
+exports.tagDeleted = functions.firestore.document('tags/{tagId}')
+    .onDelete((snapshot, context) => {
+    return location.deleteLocation(snapshot, admin);
 });
 exports.createRelationship = functions.firestore.document('relationships/{relationshipId}')
     .onCreate((snapshot, context) => {

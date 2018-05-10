@@ -11,6 +11,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const GeoFire = require("geofire");
 const main = require("./index");
 const uuid = require("uuid/v1");
+exports.deleteLocation = function (snapshot, admin) {
+    const piece = snapshot.data();
+    const id = snapshot.id;
+    const tagLocationReference = admin.database().ref('piece_locations');
+    console.log("Id of piece: " + id);
+    const geoFire = new GeoFire(tagLocationReference);
+    return geoFire.remove(id).then(function () {
+        console.log(id + " has been removed from GeoFire");
+        return { success: id + " has been removed from GeoFire" };
+    }).catch(err => {
+        return err;
+    });
+};
 exports.tagWithGeoFire = function (snapshot, admin) {
     return __awaiter(this, void 0, void 0, function* () {
         // Tag the piece or spot with a location
@@ -43,16 +56,34 @@ exports.tagWithGeoFire = function (snapshot, admin) {
  */
 function getUsersFromDocumentSnapshots(snapshots, db) {
     return __awaiter(this, void 0, void 0, function* () {
+        console.log("getUsersFromDocumentSnapshots...");
         var promises = [];
         snapshots.forEach(snapshot => {
             let query = db.collection("users").where("user_id", "==", snapshot.data().user_id).get();
+            console.log("spot user_id :" + snapshot.data().user_id);
             promises.push(query);
         });
         const userQuerySnapshots = yield Promise.all(promises);
-        const documentWithUserInfo = main.getDocumentsToReturn(snapshots, userQuerySnapshots[0].docs);
-        const promise = new Promise((resolve, reject) => {
-            resolve(documentWithUserInfo);
-        });
+        let promise;
+        if (userQuerySnapshots.length != 0) {
+            let userDocuments = userQuerySnapshots[0].docs;
+            console.log("First user document: " + userDocuments);
+            for (let index = 1; index < userQuerySnapshots.length; index++) {
+                const snapshot = userQuerySnapshots[index];
+                userDocuments = userDocuments.concat(snapshot.docs);
+                console.log(snapshot.docs + " added to userDocuments array");
+            }
+            console.log("The userDocuments is: " + userDocuments.length);
+            const documentWithUserInfo = main.getDocumentsToReturn(snapshots, userDocuments);
+            promise = new Promise((resolve, reject) => {
+                resolve(documentWithUserInfo);
+            });
+        }
+        else {
+            promise = new Promise((resolve, reject) => {
+                reject("The user does not exists anymore...");
+            });
+        }
         return promise;
     });
 }
@@ -73,7 +104,7 @@ exports.getDocumentsNearby = function (data, admin, res) {
         if (!pageToken) {
             // Create a geo query that retrieves all the tags that are within a certain distance from the users current location
             try {
-                const result = yield getTagsNearby(admin, currentLocation, db, userId, hashtags, 3, res);
+                const result = yield getTagsNearby(admin, currentLocation, db, userId, hashtags, 100, res);
                 console.log("Result from getTagsNearby is: " + result);
                 return result;
             }
@@ -83,7 +114,7 @@ exports.getDocumentsNearby = function (data, admin, res) {
         }
         else {
             try {
-                const result = yield getTagsNearbyFromDatabase(pageToken, db, userId, pageToken, 3, res);
+                const result = yield getTagsNearbyFromDatabase(pageToken, db, userId, pageToken, 100, res);
                 console.log("Result from getTagsNearbyFromDatabase is " + result);
                 return result;
             }
@@ -193,8 +224,7 @@ function handleTags(allTagIds, db, userId, hashtags, token, numberOfTagsToHandle
         const tagIds = allTagIds.splice(0, numberOfTagsToHandle);
         const tagsSnapshot = yield getTags(tagIds, db);
         const tagsToReturn = [];
-        console.log("The hashtags to filter by are :" + hashtags);
-        console.log("The list of snapshots: " + tagsSnapshot);
+        console.log("The hashtags to filter by are :" + hashtags + "...");
         // Check to see if the tags match the tags the current user is following
         for (let counter = 0; counter < tagsSnapshot.length; counter++) {
             const tagSnapshot = tagsSnapshot[counter];
@@ -208,7 +238,7 @@ function handleTags(allTagIds, db, userId, hashtags, token, numberOfTagsToHandle
                     break;
                 }
                 const hashtag = hashtags[i];
-                console.log("Current checking if user is following hashtag: " + hashtag);
+                console.log("Currently checking if user is following hashtag: " + hashtag);
                 // Get the subdocument representing the hashtags of the spot                  
                 // Once we know this tag matches a hashtag the user follows than break the loop so we don't check all the rest of the hashtags as that's too time consuming
                 if (spotHashtags[hashtag]) {
@@ -224,8 +254,11 @@ function handleTags(allTagIds, db, userId, hashtags, token, numberOfTagsToHandle
             storeNearbyTags(allTagIds.splice(numberOfTagsToHandle, allTagIds.length - 1), db, myToken);
         }
         console.log({ tags: tagsToReturn, token: myToken });
-        const tagsWithUserInfo = yield getUsersFromDocumentSnapshots(tagsToReturn, db);
-        console.log("Retrieved the tags with user information attached: " + tagsWithUserInfo);
+        let tagsWithUserInfo = [];
+        if (tagsToReturn.length != 0) {
+            tagsWithUserInfo = yield getUsersFromDocumentSnapshots(tagsToReturn, db);
+            console.log("Retrieved the tags with user information attached: " + tagsWithUserInfo);
+        }
         const promise = new Promise((resolve, reject) => {
             resolve({ tags: tagsWithUserInfo, token: myToken });
         });
@@ -270,11 +303,13 @@ function getTags(tagIds, db) {
 function getFollowing(userId, db) {
     return __awaiter(this, void 0, void 0, function* () {
         const relationshipRef = db.collection("relationships");
-        const snapshot = yield relationshipRef.where("follower", "==", "userId").get();
+        const snapshot = yield relationshipRef.where("follower", "==", userId).get();
         const following = [];
+        console.log("Ran query to get users that the current user is following...");
         snapshot.docs.forEach(document => {
-            following.push(document);
+            following.push(document.data().followee);
         });
+        console.log("Users the user is following: " + following);
         return following;
     });
 }

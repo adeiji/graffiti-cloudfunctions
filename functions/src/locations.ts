@@ -2,6 +2,7 @@ import * as GeoFire from "geofire"
 import * as main from "./index"
 import * as functions from "firebase-functions"
 import * as uuid from "uuid/v1"
+import * as notifications from "./notifications"
 import { user } from "firebase-functions/lib/providers/auth";
 
 export const deleteLocation = function (snapshot, admin) {
@@ -33,7 +34,16 @@ export const tagWithGeoFire = async function (snapshot, admin) {
       console.log("Location saved with piece to database")
       return { success: "Location saved with piece to database" }
     }).catch(err => {
-      return err
+      setTimeout(function() {        
+        geoFire.set(id, location)
+          .then(function () {
+            console.log("Location saved with pice to database")
+            return { success: "Location saved with piece to database" }
+            })
+          .catch(error => {
+            return error
+          })
+      }, 2000)
     })
   }).catch(error => {
     return error
@@ -53,7 +63,7 @@ export const tagWithGeoFire = async function (snapshot, admin) {
 async function getUsersFromDocumentSnapshots(snapshots, db) {
   console.log("getUsersFromDocumentSnapshots...")
 
-  var promises:Promise<FirebaseFirestore.QuerySnapshot>[] = []
+  let promises:Promise<FirebaseFirestore.QuerySnapshot>[] = []
   snapshots.forEach(snapshot => {    
     let query = db.collection("users").where("user_id", "==", snapshot.data().user_id).get()
     console.log("spot user_id :" + snapshot.data().user_id)
@@ -94,6 +104,7 @@ export const getDocumentsNearby = async function (data, admin, res) {
   const userId = data.user_id
   const pageToken = data.page_token
   let hashtags = data.hashtags
+  const isBackground = data.isBackground
 
   // If this is a HTTP Request than the hashtags will be sent as a string otherwise it's sent as an array
   if (res) {
@@ -106,6 +117,17 @@ export const getDocumentsNearby = async function (data, admin, res) {
     // Create a geo query that retrieves all the tags that are within a certain distance from the users current location
     try {
       const result = await getTagsNearby(admin, currentLocation, db, userId, hashtags, 100, res)
+      console.log("The tags to return array length is " + result["tags"].length)
+      console.log("isBackground = " + isBackground)
+      if (isBackground == "true" && result["tags"].length > 0) {
+        notifications.sendNotification(userId, "There's stuff nearby that you're interested in!", admin)
+          .then(response => {
+            console.log(response)
+          })
+          .catch(error => {
+            console.log(error)
+          })
+      }
       console.log("Result from getTagsNearby is: " + result)
       return result
     } catch (error) {      
@@ -115,6 +137,15 @@ export const getDocumentsNearby = async function (data, admin, res) {
     try {
       const result = await getTagsNearbyFromDatabase(pageToken, db, userId, pageToken, 100, res)
       console.log("Result from getTagsNearbyFromDatabase is " + result)
+      if (isBackground == "true" && result["tags"].length > 0) {
+        notifications.sendNotification(userId, "There's stuff nearby that you're interested in!", admin)
+          .then(response => {
+            console.log(response)
+          })
+          .catch(error => {
+            console.log(error)
+          })
+      }
       return result
     } catch (error) {
       return error
@@ -123,7 +154,7 @@ export const getDocumentsNearby = async function (data, admin, res) {
 }
 
 function removeSentTagsFromDatabase(idsToDeleteDocuments, db) {
-  var batch = db.batch()
+  let batch = db.batch()
   idsToDeleteDocuments.forEach(document => {
     const docRef = db.collection("nearby_tags").doc(document.id)
     batch.delete(docRef)
@@ -145,7 +176,7 @@ async function getTagsNearbyFromDatabase(token, db, userId, hashtags, numberOfTa
       });
 
       // If there's a token meaning we're paging, than only remove the documents that will be returned, otherwise remove all of them
-      var tagsToRemove
+      let tagsToRemove
       if (token) {
         tagSnapshot.docs.split(numberOfTagsToHandle, tagSnapshot.docs.length - 1)
       } else {
@@ -172,7 +203,7 @@ async function getTagsNearby(admin, currentLocation, db, userId, hashtags, numbe
     radius: 500
   })
 
-  var keys = []
+  let keys = []
   console.log("Current location in query is " + query.center())
 
   const keyEntered = query.on("key_entered", function (key, location, distance) {
@@ -234,7 +265,7 @@ async function handleTags(allTagIds, db, userId, hashtags, token, numberOfTagsTo
     tag["document_id"] = tagSnapshot.id
     const spotHashtags = tag["hashtags"]
     console.log(tag)
-    for (var i = 0; i < hashtags.length; i++) {
+    for (let i = 0; i < hashtags.length; i++) {
       if (followingUsers.indexOf(tag["user_id"]) !== -1) {
         tagsToReturn.push(tagSnapshot)
         break
@@ -296,14 +327,15 @@ function storeNearbyTags(tagIds, db, token) {
 async function getTags(tagIds, db) {
   const tagCollectionRef = db.collection("tags")
 
-  // Once we have all the documents using GeoFire, we need to retrieve their values from the respective collection, in this case from the Tags collections   
-  const tagSnapshots = []
+  // Once we have all the documents using GeoFire, we need to retrieve their values from the respective collection, in this case from the Tags collections     
+  const promises = []
+
   for (let i = 0; i < tagIds.length; i++) {
-    const tagSnapshot = await tagCollectionRef.doc(tagIds[i]).get()
-    tagSnapshots.push(tagSnapshot)
-    console.log("Pushed snapshot: " + tagSnapshot)
+    promises.push(tagCollectionRef.doc(tagIds[i]).get())        
   };
 
+  const tagSnapshots = await Promise.all(promises)
+  console.log(tagSnapshots)
   return tagSnapshots
 }
 

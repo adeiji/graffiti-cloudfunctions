@@ -5,6 +5,7 @@ import * as gcs from "@google-cloud/storage"
 import * as request from "request"
 import * as uuid from "uuid/v1"
 import * as location from "./locations"
+import * as notifications from "./notifications"
 
 const kUsername = "username";
 const kProfilePictureUrl = "profile_picture_url";
@@ -160,10 +161,6 @@ function getPromises(docs): Promise<FirebaseFirestore.DocumentSnapshot>[] {
   return promises
 }
 
-function getPublicURL(filename, userId) {
-  return "https://firebasestorage.googleapis.com/v0/b/asia-graffiti/o/" + userId + "/images/" + filename
-}
-
 export const getInstagramMedia = functions.https.onCall((data, context) => {
   return asyncGetInstagramMedia(data);
 })
@@ -300,6 +297,12 @@ export const handleIncrementDoc = async function (collection, snapshot, incremen
     return err
   }
 }
+
+export const activityCreated = functions.firestore.document('activities/{activitiesId}')
+  .onCreate((snapshot, context) => {
+    const activity = snapshot.data()
+    return notifications.sendNotification(activity.user_id, activity.message, admin)
+  })
 
 export const deleteRelationship = functions.firestore.document('relationships/{relationshipId}')
   .onDelete((snapshot, context) => {

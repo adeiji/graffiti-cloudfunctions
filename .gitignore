@@ -1,1 +1,5 @@
 functions/node_modules/
+functions/src/service-account.json
+functions/src/service-account.ts
+functions/lib/service-account.js.map
+functions/lib/service-account.js

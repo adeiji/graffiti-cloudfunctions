@@ -15,6 +15,7 @@ const gcs = require("@google-cloud/storage");
 const request = require("request");
 const uuid = require("uuid/v1");
 const location = require("./locations");
+const notifications = require("./notifications");
 const kUsername = "username";
 const kProfilePictureUrl = "profile_picture_url";
 const kUserId = "user_id";
@@ -152,9 +153,6 @@ function getPromises(docs) {
     }
     return promises;
 }
-function getPublicURL(filename, userId) {
-    return "https://firebasestorage.googleapis.com/v0/b/asia-graffiti/o/" + userId + "/images/" + filename;
-}
 exports.getInstagramMedia = functions.https.onCall((data, context) => {
     return asyncGetInstagramMedia(data);
 });
@@ -285,6 +283,11 @@ exports.handleIncrementDoc = function (collection, snapshot, incrementBy) {
         }
     });
 };
+exports.activityCreated = functions.firestore.document('activities/{activitiesId}')
+    .onCreate((snapshot, context) => {
+    const activity = snapshot.data();
+    return notifications.sendNotification(activity.user_id, activity.message, admin);
+});
 exports.deleteRelationship = functions.firestore.document('relationships/{relationshipId}')
     .onDelete((snapshot, context) => {
     return exports.handleIncrementDoc("relationships", snapshot, -1);

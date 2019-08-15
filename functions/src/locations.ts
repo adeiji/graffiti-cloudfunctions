@@ -34,7 +34,7 @@ export const tagWithGeoFire = async function (snapshot, admin) {
       console.log("Location saved with piece to database")
       return { success: "Location saved with piece to database" }
     }).catch(err => {
-      setTimeout(function() {        
+      setTimeout(function() {                
         geoFire.set(id, location)
           .then(function () {
             console.log("Location saved with pice to database")
@@ -266,7 +266,7 @@ async function handleTags(allTagIds, db, userId, hashtags, token, numberOfTagsTo
     const spotHashtags = tag["hashtags"]
     console.log(tag)
     for (let i = 0; i < hashtags.length; i++) {
-      if (followingUsers.indexOf(tag["user_id"]) !== -1) {
+      if (followingUsers.indexOf(tag["user_id"]) != -1 || userId === tag["user_id"]) {
         tagsToReturn.push(tagSnapshot)
         break
       }

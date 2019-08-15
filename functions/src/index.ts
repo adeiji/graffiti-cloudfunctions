@@ -1,11 +1,12 @@
 import * as functions from "firebase-functions"
 import * as admin from "firebase-admin"
 import * as got from "got"
-import * as gcs from "@google-cloud/storage"
+import * as Storage from "@google-cloud/storage"
 import * as request from "request"
 import * as uuid from "uuid/v1"
 import * as location from "./locations"
 import * as notifications from "./notifications"
+import * as GeoFire from "geofire"
 
 const kUsername = "username";
 const kProfilePictureUrl = "profile_picture_url";
@@ -14,7 +15,7 @@ const kDocumentId = "document_id"
 
 admin.initializeApp(functions.config().firebase)
 const db = admin.firestore()
-gcs()
+const gcs = new Storage.Storage()
 
 export const checkIfDocumentExists = functions.https.onCall((data, context) => {
   const collection = data.collection;
@@ -308,6 +309,56 @@ export const deleteRelationship = functions.firestore.document('relationships/{r
   .onDelete((snapshot, context) => {
     return handleIncrementDoc("relationships", snapshot, -1)
   })
+
+export const addLocationToTagsWithNoLocation = functions.pubsub.schedule('every day').onRun(async context => {
+  const querySnapshot = await db.collection("tags").get()      
+  const tagLocationReference = admin.database().ref('piece_locations')
+  const geoFire = new GeoFire(tagLocationReference)
+
+  var locationDoc = {}
+  
+  for (let index = 0; index < querySnapshot.docs.length; index++) {
+    const doc = querySnapshot.docs[index];      
+    const tagData = doc.data()
+    const tagLocation = await geoFire.get(doc.id)            
+
+    if (tagLocation == null ) {
+      const tagId = doc.id
+      const myLocation = [tagData.location.latitude, tagData.location.longitude]      
+      locationDoc[tagId] = myLocation      
+    }
+  }
+
+  await geoFire.set(locationDoc)
+  console.log("Finished creating GeoFire documents for tags with no GeoFire document")
+})
+
+async function createGeoFireDocumentForTag (tag) {
+  
+  const tagLocationReference = admin.database().ref('piece_locations')
+  const tagData = tag.data()
+  const geoFire = new GeoFire(tagLocationReference)
+
+  geoFire.get(tag.id).then( async tagLocation => {
+    if (tagLocation == null) {           
+      const myLocation = [tagData.location.latitude, tagData.location.longitude]
+      console.log("The location for the GeoFire document is " + myLocation)
+      var tagId = tag.Id
+      await geoFire.set({ tagId: myLocation })       
+
+      var returnMessage = "A GeoFire document with Id " + tag.Id + " was created successfully."
+      console.log(returnMessage)
+      return returnMessage
+    } else {
+      return "The tag with Id " + tag.id + " already has it's location saved."
+    }
+  }, (error) => {      
+    console.error("Error updating getting tag: ", error)
+    return error
+  })
+
+}
+
 /*
 Requires a document that consists of the following key values at least, user_id:String, location: { latitude:Double longitude:Double}
 */

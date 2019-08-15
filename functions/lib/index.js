@@ -11,18 +11,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const got = require("got");
-const gcs = require("@google-cloud/storage");
+const Storage = require("@google-cloud/storage");
 const request = require("request");
 const uuid = require("uuid/v1");
 const location = require("./locations");
 const notifications = require("./notifications");
+const GeoFire = require("geofire");
 const kUsername = "username";
 const kProfilePictureUrl = "profile_picture_url";
 const kUserId = "user_id";
 const kDocumentId = "document_id";
 admin.initializeApp(functions.config().firebase);
 const db = admin.firestore();
-gcs();
+const gcs = new Storage.Storage();
 exports.checkIfDocumentExists = functions.https.onCall((data, context) => {
     const collection = data.collection;
     const keys = data.keys;
@@ -292,6 +293,48 @@ exports.deleteRelationship = functions.firestore.document('relationships/{relati
     .onDelete((snapshot, context) => {
     return exports.handleIncrementDoc("relationships", snapshot, -1);
 });
+exports.addLocationToTagsWithNoLocation = functions.pubsub.schedule('every day').onRun((context) => __awaiter(this, void 0, void 0, function* () {
+    const querySnapshot = yield db.collection("tags").get();
+    const tagLocationReference = admin.database().ref('piece_locations');
+    const geoFire = new GeoFire(tagLocationReference);
+    var locationDoc = {};
+    for (let index = 0; index < querySnapshot.docs.length; index++) {
+        const doc = querySnapshot.docs[index];
+        const tagData = doc.data();
+        const tagLocation = yield geoFire.get(doc.id);
+        if (tagLocation == null) {
+            const tagId = doc.id;
+            const myLocation = [tagData.location.latitude, tagData.location.longitude];
+            locationDoc[tagId] = myLocation;
+        }
+    }
+    yield geoFire.set(locationDoc);
+    console.log("Finished creating GeoFire documents for tags with no GeoFire document");
+}));
+function createGeoFireDocumentForTag(tag) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const tagLocationReference = admin.database().ref('piece_locations');
+        const tagData = tag.data();
+        const geoFire = new GeoFire(tagLocationReference);
+        geoFire.get(tag.id).then((tagLocation) => __awaiter(this, void 0, void 0, function* () {
+            if (tagLocation == null) {
+                const myLocation = [tagData.location.latitude, tagData.location.longitude];
+                console.log("The location for the GeoFire document is " + myLocation);
+                var tagId = tag.Id;
+                yield geoFire.set({ tagId: myLocation });
+                var returnMessage = "A GeoFire document with Id " + tag.Id + " was created successfully.";
+                console.log(returnMessage);
+                return returnMessage;
+            }
+            else {
+                return "The tag with Id " + tag.id + " already has it's location saved.";
+            }
+        }), (error) => {
+            console.error("Error updating getting tag: ", error);
+            return error;
+        });
+    });
+}
 /*
 Requires a document that consists of the following key values at least, user_id:String, location: { latitude:Double longitude:Double}
 */

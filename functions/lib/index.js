@@ -95,7 +95,14 @@ exports.getDocumentsWithUser = functions.https.onCall((data, context) => {
     const key = data.key;
     const value = data.value;
     console.log('Executed tag query with key - ' + key + ', value - ' + value + ', collection - ' + collection);
-    return db.collection(collection).where(key, '==', value).get()
+    let query;
+    if (key != "" && value != "") {
+        query = db.collection(collection).where(key, '==', value);
+    }
+    else {
+        query = db.collection(collection);
+    }
+    return query.get()
         .then(snapshot => {
         console.log('Initial Query Executed With ' + snapshot.docs.length + ' results');
         if (snapshot.docs.length === 0) {

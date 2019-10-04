@@ -294,7 +294,7 @@ exports.handleIncrementDoc = function (collection, snapshot, incrementBy) {
 exports.activityCreated = functions.firestore.document('activities/{activitiesId}')
     .onCreate((snapshot, context) => {
     const activity = snapshot.data();
-    return notifications.sendNotification(activity.user_id, activity.message, admin);
+    return notifications.sendNotification(activity.to_user_id, activity.message, admin);
 });
 exports.deleteRelationship = functions.firestore.document('relationships/{relationshipId}')
     .onDelete((snapshot, context) => {

@@ -310,7 +310,7 @@ export const handleIncrementDoc = async function (collection, snapshot, incremen
 export const activityCreated = functions.firestore.document('activities/{activitiesId}')
   .onCreate((snapshot, context) => {
     const activity = snapshot.data()
-    return notifications.sendNotification(activity.user_id, activity.message, admin)
+    return notifications.sendNotification(activity.to_user_id, activity.message, admin)
   })
 
 export const deleteRelationship = functions.firestore.document('relationships/{relationshipId}')

@@ -7,7 +7,6 @@ export const sendNotification = function (userId:string, activity:string, admin)
   const db = admin.firestore()
   const userCollectionRef:FirebaseFirestore.CollectionReference = db.collection("fcm_tokens")
   return userCollectionRef.doc(userId).get().then(userSnapshot => {
-    
     const token = userSnapshot.data().token    
     console.log(userSnapshot.data())
     let body = {

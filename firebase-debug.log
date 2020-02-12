@@ -1,0 +1,17 @@
+[debug] [2019-11-13T08:06:04.007Z] ----------------------------------------------------------------------
+[debug] [2019-11-13T08:06:04.009Z] Command:       /Users/adeiji/.nvm/versions/node/v11.6.0/bin/node /usr/local/bin/firebase emulators:start
+[debug] [2019-11-13T08:06:04.009Z] CLI Version:   7.5.0
+[debug] [2019-11-13T08:06:04.009Z] Platform:      darwin
+[debug] [2019-11-13T08:06:04.009Z] Node Version:  v11.6.0
+[debug] [2019-11-13T08:06:04.009Z] Time:          Wed Nov 13 2019 16:06:04 GMT+0800 (Taipei Standard Time)
+[debug] [2019-11-13T08:06:04.009Z] ----------------------------------------------------------------------
+[debug] 
+[info] i  Starting emulators: ["functions","firestore"]
+[warn] ⚠  Your requested "node" version "8" doesn't match your global version "11"
+[info] ✔  functions: Emulator started at http://localhost:5001
+[info] i  firestore: Serving ALL traffic (including WebChannel) on http://localhost:8080
+[warn] ⚠  firestore: Support for WebChannel on a separate port (8081) is DEPRECATED and will go away soon. Please use port above instead.
+[debug] [2019-11-13T08:06:04.319Z] Ignoring unsupported arg: projectId
+[debug] [2019-11-13T08:06:04.320Z] Ignoring unsupported arg: auto_download
+[debug] [2019-11-13T08:06:04.320Z] Starting emulator firestore with command {"binary":"java","args":["-Duser.language=en","-jar","/Users/adeiji/.cache/firebase/emulators/cloud-firestore-emulator-v1.9.0.jar","--host","localhost","--port",8080,"--rules","/Users/adeiji/Documents/Dephyned/graffiti-app/graffiti-cloudfunctions/firestore.rules","--functions_emulator","localhost:5001","--webchannel_port",8081],"optionalArgs":["port","webchannel_port","host","rules","functions_emulator"]}
+[info] i  firestore: Emulator logging to firestore-debug.log

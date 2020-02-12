@@ -21,7 +21,11 @@ const kUsername = "username";
 const kProfilePictureUrl = "profile_picture_url";
 const kUserId = "user_id";
 const kDocumentId = "document_id";
-admin.initializeApp(functions.config().firebase);
+// admin.initializeApp(functions.config().firebase)
+admin.initializeApp({
+    credential: admin.credential.applicationDefault(),
+    databaseURL: 'https://graffiti-6cf5a.firebaseio.com'
+});
 const db = admin.firestore();
 const gcs = new Storage.Storage();
 exports.checkIfDocumentExists = functions.https.onCall((data, context) => {

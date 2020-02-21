@@ -299,13 +299,8 @@ function getTags(tagIds, db) {
             promises.push(tagCollectionRef.doc(tagIds[i]).get());
         }
         ;
-        const tagSnapshots = yield Promise.all(promises).then(values => {
-            console.log(values[0].exists);
-        });
-        // tagSnapshots.then(values => {
-        //   console.log(values)
-        // })
-        return [];
+        const tagSnapshots = yield Promise.all(promises);
+        return tagSnapshots;
     });
 }
 // Get all the users that the current user is following

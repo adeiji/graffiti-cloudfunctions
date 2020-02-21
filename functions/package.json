@@ -20,6 +20,7 @@
     "got": "^8.3.0",
     "request": "^2.85.0",
     "service-account": "^1.0.2",
+    "stripe": "^8.17.0",
     "uuid": "^3.2.1"
   },
   "devDependencies": {

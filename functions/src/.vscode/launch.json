@@ -11,12 +11,6 @@
       "name": "Debug V8 Inspect",
       "port": 9229
     },
-  {
-    "type": "node",
-    "request": "attach",
-    "name": "Attach",
-    "port": 6000
-  },
     {
       "type": "node",
       "request": "launch",

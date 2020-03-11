@@ -4,7 +4,7 @@ import * as functions from "firebase-functions"
 import * as uuid from "uuid/v1"
 import * as notifications from "./notifications"
 import { user } from "firebase-functions/lib/providers/auth";
-import { DocumentSnapshot, CollectionReference } from "@google-cloud/firestore"
+import { DocumentSnapshot } from "firebase-functions/lib/providers/firestore"
 
 export const deleteLocation = function (snapshot, admin) {
   const piece = snapshot.data()

@@ -3,7 +3,7 @@ const {google} = require('googleapis')
 import * as service_account from "./service-account"
 const https = require('https');
 
-export const sendNotification = function (userId:string, activity:string, admin) {
+export const sendNotification = function (userId:string, activity:string, admin, spotId:string = "") {
   const db = admin.firestore()
   const userCollectionRef:FirebaseFirestore.CollectionReference = db.collection("fcm_tokens")
   return userCollectionRef.doc(userId).get().then(userSnapshot => {
@@ -14,7 +14,10 @@ export const sendNotification = function (userId:string, activity:string, admin)
         token: token,
         notification: {        
           body: activity,
-          title: "Graffiti"
+          title: "Graffiti"          
+        },
+        data: {
+          spotId: spotId
         }
       }
     }        

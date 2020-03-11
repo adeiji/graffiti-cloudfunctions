@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const { google } = require('googleapis');
 const service_account = require("./service-account");
 const https = require('https');
-exports.sendNotification = function (userId, activity, admin) {
+exports.sendNotification = function (userId, activity, admin, spotId = "") {
     const db = admin.firestore();
     const userCollectionRef = db.collection("fcm_tokens");
     return userCollectionRef.doc(userId).get().then(userSnapshot => {
@@ -15,6 +15,9 @@ exports.sendNotification = function (userId, activity, admin) {
                 notification: {
                     body: activity,
                     title: "Graffiti"
+                },
+                data: {
+                    spotId: spotId
                 }
             }
         };

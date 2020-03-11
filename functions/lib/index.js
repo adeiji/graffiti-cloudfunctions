@@ -21,39 +21,6 @@ const kUsername = "username";
 const kProfilePictureUrl = "profile_picture_url";
 const kUserId = "user_id";
 const kDocumentId = "document_id";
-const stripe = require('stripe')('sk_test_4eC39HqLyjWDarjtT1zdp7dc');
-exports.getPaymentIntentSecret = functions.https.onRequest((data, context) => {
-    // Get the tour id and the user id from the request
-    var tourId = data.body.tourId;
-    let userId = data.body.userId;
-    console.log(data);
-    console.log(tourId);
-    console.log(userId);
-    // get the tour from the database and get the price
-    return db.collection("tours").where('id', '==', tourId).get().then(snapshot => {
-        if (snapshot.docs.length > 0) {
-            let tour = snapshot.docs[0];
-            let tourPrice = tour.get('price');
-            return createIntent(tourPrice, userId).then(clientSecret => {
-                return clientSecret;
-            });
-        }
-        else {
-            return 'no-value';
-        }
-    });
-});
-function createIntent(price, userId) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const paymentIntent = yield stripe.paymentIntent.create({
-            price,
-            currency: 'usd',
-            payment_method_types: ['card'],
-            metadata: { uid: userId }
-        });
-        return paymentIntent.client_secret;
-    });
-}
 // admin.initializeApp(functions.config().firebase)
 admin.initializeApp({
     credential: admin.credential.applicationDefault(),
@@ -331,7 +298,7 @@ exports.handleIncrementDoc = function (collection, snapshot, incrementBy) {
 exports.activityCreated = functions.firestore.document('activities/{activitiesId}')
     .onCreate((snapshot, context) => {
     const activity = snapshot.data();
-    return notifications.sendNotification(activity.to_user_id, activity.message, admin);
+    return notifications.sendNotification(activity.to_user_id, activity.message, admin, activity.tag_id);
 });
 exports.deleteRelationship = functions.firestore.document('relationships/{relationshipId}')
     .onDelete((snapshot, context) => {

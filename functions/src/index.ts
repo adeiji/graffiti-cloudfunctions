@@ -347,6 +347,12 @@ export const addLocationToTagsWithNoLocation = functions.pubsub.schedule('every 
   console.log("Finished creating GeoFire documents for tags with no GeoFire document")
 })
 
+export const spotCreated = functions.firestore.document('tags/{spotId}').onCreate((snapshot, context) => {
+  return snapshot.ref.set({
+    last_modified_time: new Date().getTime() / 1000
+  }, { merge: true })
+})
+
 async function createGeoFireDocumentForTag (tag) {
   
   const tagLocationReference = admin.database().ref('piece_locations')

@@ -322,6 +322,11 @@ exports.addLocationToTagsWithNoLocation = functions.pubsub.schedule('every day')
     yield geoFire.set(locationDoc);
     console.log("Finished creating GeoFire documents for tags with no GeoFire document");
 }));
+exports.spotCreated = functions.firestore.document('tags/{spotId}').onCreate((snapshot, context) => {
+    return snapshot.ref.set({
+        last_modified_time: new Date().getTime() / 1000
+    }, { merge: true });
+});
 function createGeoFireDocumentForTag(tag) {
     return __awaiter(this, void 0, void 0, function* () {
         const tagLocationReference = admin.database().ref('piece_locations');

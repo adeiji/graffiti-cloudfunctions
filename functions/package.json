@@ -17,7 +17,7 @@
     "firebase-functions": "^3.2.0",
     "geofire": "^4.1.2",
     "googleapis": "^42.0.0",
-    "got": "^8.3.0",
+    "got": "^11.8.5",
     "request": "^2.85.0",
     "service-account": "^1.0.2",
     "stripe": "^8.17.0",
